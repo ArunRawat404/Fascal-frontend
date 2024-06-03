@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fasal</title>
+    <link rel="stylesheet" href="home.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Search Movies</h1>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for movies...">
+            <button id="search-button">Search</button>
+        </div>
+        <div class="movies-container" id="movies-container">
+            <!-- Movie cards will be dynamically added here -->
+        </div>
+        <div class="lists-container" id="lists-container">
+            <!-- Lists will be dynamically added here -->
+        </div>
+        <button id="logout-button">Logout</button>
+    </div>
+
+    <script>
+        const URL = "https://fascal-backend.onrender.com";
+
+        // Function to fetch and display movies based on search query
+        const searchMovies = async (query) => {
+            const response = await fetch(`${URL}/api/movies/search?q=${query}`);
+            const movies = await response.json();
+
+            const moviesContainer = document.getElementById('movies-container');
+            moviesContainer.innerHTML = '';
+            movies.forEach(movie => {
+                const movieCard = document.createElement('div');
+                movieCard.classList.add('movie');
+                movieCard.innerHTML = `
+                    <img src="${movie.Poster}" alt="${movie.Title}">
+                    <div class="movie-details">
+                        <h2 class="movie-title">${movie.Title}</h2>
+                        <p class="movie-description">${movie.Year}</p>
+                        <button class="add-to-list-button" onclick="addToMyList('${movie.Title}')">Add to List</button>
+                    </div>
+                `;
+                moviesContainer.appendChild(movieCard);
+            });
+        };
+
+        const addToMyList = async (title) => {
+            const listName = prompt("Enter the name of your list:");
+            if (listName) {
+                const privacyOption = prompt("Enter the privacy option (private or public):");
+                if (privacyOption && (privacyOption.toLowerCase() === 'private' || privacyOption.toLowerCase() === 'public')) {
+                    const response = await fetch(`${URL}/api/lists`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: listName,
+                            privacy: privacyOption.toLowerCase(),
+                            movie: title,
+                            user: user
+                        })
+                    });
+                    if (response.ok) {
+                        alert(`"${title}" added to your "${privacyOption}" list "${listName}"`);
+                    } else {
+                        alert("Failed to add movie to list.");
+                    }
+                } else {
+                    alert("Invalid privacy option. Please enter 'private' or 'public'.");
+                }
+            }
+        };
+
+        // Function to fetch and display user's lists
+        const fetchLists = async () => {
+            const response = await fetch(`${URL}/api/lists`);
+            const lists = await response.json();
+
+            const listsContainer = document.getElementById('lists-container');
+            listsContainer.innerHTML = '';
+            lists.forEach(list => {
+                const listElement = document.createElement('div');
+                listElement.classList.add('list');
+                listElement.textContent = list.name;
+                listElement.addEventListener('click', () => {
+                    alert(`Showing movies in list "${list.name}"`);
+                });
+                listsContainer.appendChild(listElement);
+            });
+        };
+
+        // Search button click event listener
+        document.getElementById('search-button').addEventListener('click', () => {
+            const query = document.getElementById('search-input').value;
+            searchMovies(query);
+        });
+
+        // Logout button click event listener
+        document.getElementById('logout-button').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        // Fetch user's lists when the page loads
+        window.onload = fetchLists;
+    </script>
+</body>
+
+</html>
